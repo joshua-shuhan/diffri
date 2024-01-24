@@ -225,9 +225,9 @@ class diff_models(nn.Module):
             edges_new[i] = torch.cat([edges[i, :target_list[i].long()],  torch.tensor([1]).to(edges.device), edges[i, target_list[i].long():]])
             edges_temp_new[i] = torch.cat([edges_temp[i, :target_list[i].long()], torch.tensor([1]).to(edges_temp.device), edges_temp[i, target_list[i].long():]])
 
-        for i in range(B):
-            setting.record_mat[target_list[i].long()] += edges_temp_new[i]
-        print(setting.record_mat[:10,:10])
+        # for i in range(B):
+        #     setting.record_mat[target_list[i].long()] += edges_temp_new[i]
+        # print(setting.record_mat[:10,:10])
 
         # time_reg = torch.tensor([torch.sum(torch.abs(self.latest_graph[target_list[i].long()].to(edges.device) - edges[i])) for i in range(B)])
         # time_reg = torch.mean(time_reg)
@@ -269,7 +269,6 @@ class ResidualBlock(nn.Module):
             self.feature_layer = torch.nn.LSTM(input_size=config['model']["number_series"], hidden_size=256,batch_first=True,num_layers=1,dropout=0.5,proj_size=1)
         elif config['model']['feature_layer'] == 'mlp':
             self.feature_layer = MLPBlock(in_dims=config['model']["number_series"], hidden_dims=64 * config['model']["number_series"] // 5,out_dims=1, do_prob=0.5) # nn.ModuleList(MLPBlock(in_dims=config['model']["number_series"], hidden_dims=config['model']["number_series"] // 2, out_dims=1, do_prob=0.0) for i in range(config['model']["number_series"]))
-            #self.feature_layer = nn.ModuleList(MLPBlock(in_dims=config['model']["number_series"], hidden_dims=32 * config['model']["number_series"] // 5, out_dims=1, do_prob=0.0) for i in range(config['model']["number_series"]))
         self.target_embedding = TargetEmbedding(
             num_nodes=config['model']["number_series"],
             embedding_dim=channels ,

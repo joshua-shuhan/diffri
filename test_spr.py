@@ -13,8 +13,7 @@ parser = argparse.ArgumentParser(description="DiffRI")
 parser.add_argument("--config", type=str, default="spr.yaml")
 parser.add_argument('--device', default='cuda:0', help='Device for Attack')
 parser.add_argument("--eval-sample", type=int, default=5)
-parser.add_argument("--unconditional", action="store_true")
-parser.add_argument("--modelfolder", type=str, required=True)
+parser.add_argument("--model-path", type=str, required=True)
 parser.add_argument('--test-mr', default=0.5, type=float)
 parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--T", type=int, required=True)
@@ -24,11 +23,13 @@ parser.add_argument("--num-node", type=int, required=True)
 args = parser.parse_args()
 print(args)
 
-path = "config/" + args.config
+modelfolder = args.model_path.split('/')[-2]
+path = f"save/{modelfolder}/config.json" 
 with open(path, "r") as f:
     config = yaml.safe_load(f)
 
 config["model"]["time_steps"] = args.T * 2
+# Performs some checks.
 assert config["exp_set"]["network_density"] == args.density
 assert config["exp_set"]["seed"] == args.seed
 assert config["exp_set"]["num_node"] == args.num_node
@@ -48,7 +49,7 @@ data_loader = get_dataloader(
 
 model = DiffRI(config, args.device, target_dim=args.num_node).to(args.device)
 
-loaded = torch.load("./save/" + args.modelfolder)
+loaded = torch.load("./save/" + args.model_path)
 if 'model_state_dict' in loaded.keys():
     model.load_state_dict(loaded['model_state_dict'])
 else: 

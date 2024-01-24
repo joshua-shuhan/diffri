@@ -22,7 +22,6 @@ parser.add_argument("--T", type=int, required=True)
 parser.add_argument("--density", type=float, required=True)
 parser.add_argument("--num-node", type=int, required=True)
 
-
 args = parser.parse_args()
 print(args)
 
@@ -31,10 +30,7 @@ path = f"save/{modelfolder}/config.json"
 with open(path, "r") as f:
     config = yaml.safe_load(f)
 
-# config["model"]["is_unconditional"] = args.unconditional
-# config["model"]["number_series"] = args.num_node
-# config["train"]["batch_size"] = 1
-# config["model"]["time_steps"] = args.T
+# Performs some checks.
 assert config["exp_set"]["network_density"] == args.density
 assert config["exp_set"]["seed"] == args.seed
 assert config["exp_set"]["num_node"] == args.num_node

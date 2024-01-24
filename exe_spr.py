@@ -16,11 +16,13 @@ parser.add_argument("--eval-sample", type=int, default=5)
 parser.add_argument("--unconditional", action="store_true")
 parser.add_argument("--modelfolder", type=str, default="")
 parser.add_argument("--checkpoint-path", type=str, default="", help="model path")
+parser.add_argument('--gt-mr', default=0.0, type=float)
 parser.add_argument('--test-mr', default=0.5, type=float)
 parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--T", type=int, required=True, help="raw input data length")
 parser.add_argument("--density", type=float, required=True)
 parser.add_argument("--num-node", type=int, required=True)
+parser.add_argument("--no-reg", action="store_true")
 
 
 args = parser.parse_args()
@@ -36,10 +38,13 @@ config["model"]["time_steps"] = args.T * 2
 
 # record exp settings
 config["exp_set"] = {}
-config["exp_set"]["noise"] = args.noise
 config["exp_set"]["network_density"] = args.density
 config["exp_set"]["seed"] = args.seed
 config["exp_set"]["num_node"] = args.num_node
+if args.no_reg:
+    config["exp_set"]["no-reg"] = True
+else:
+    config["exp_set"]["no-reg"] = False
 
 print(json.dumps(config, indent=4))
 

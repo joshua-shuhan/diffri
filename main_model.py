@@ -125,8 +125,10 @@ class DiffRI_base(nn.Module):
         num_eval = target_mask.sum()
         l1_loss = torch.sum(l1_loss) / torch.numel(l1_loss)
 
-        loss = (residual ** 2).sum() / (num_eval if num_eval > 0 else 1) # + 0.01 * torch.abs(l1_loss - self.density) 
-        
+        if self.config["exp_set"]["no-reg"]:
+            loss = (residual ** 2).sum() / (num_eval if num_eval > 0 else 1)
+        else:
+            loss = (residual ** 2).sum() / (num_eval if num_eval > 0 else 1) + 0.01 * torch.abs(l1_loss - self.density) 
         return loss
 
     def compute_alpha(self, beta, t):

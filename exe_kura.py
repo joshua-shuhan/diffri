@@ -22,6 +22,7 @@ parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--T", type=int, required=True, help="raw input data length")
 parser.add_argument("--density", type=float, required=True)
 parser.add_argument("--num-node", type=int, required=True)
+parser.add_argument("--no-reg", action="store_true")
 
 
 args = parser.parse_args()
@@ -34,10 +35,12 @@ with open(path, "r") as f:
 config["model"]["is_unconditional"] = args.unconditional
 config["model"]["number_series"] = args.num_node
 config["model"]["time_steps"] = args.T
-
+if args.no_reg:
+    config["exp_set"]["no-reg"] = True
+else:
+    config["exp_set"]["no-reg"] = False
 # exp settings
 config["exp_set"] = {}
-config["exp_set"]["noise"] = args.noise
 config["exp_set"]["network_density"] = args.density
 config["exp_set"]["seed"] = args.seed
 config["exp_set"]["num_node"] = args.num_node
