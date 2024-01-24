@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import odeint
 
-
+# Based on https://github.com/fabridamicelli/kuramoto
 class Kuramoto:
 
     def __init__(self, coupling=1, dt=0.01, T=10, n_nodes=None, natfreqs=None):

@@ -6,12 +6,11 @@ import numpy as np
 import random
 import torch
 from torch.utils.data import DataLoader, Dataset
-#from auto_encoder_model.ae_model import Autoencoder
 
 class spr_Dataset(Dataset):
     def __init__(self, num_nodes, eval_length=100, seed=0, train=True, val=False, test_mr=0.5, gt_mr=0.0, density=0.5, noise=False, amortized=False):
         self.eval_length = eval_length
-        np.random.seed(seed)  # seed for ground truth choice
+        np.random.seed(seed)  
         torch.manual_seed(seed)
         self.observed_values = []
         self.observed_masks = []
@@ -40,26 +39,15 @@ class spr_Dataset(Dataset):
                 print("Please create data first")
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path_ind)      
             else:
-                print(f'Loaded data: {path_ind}')     
-        
-        # Autoencoder_model = Autoencoder(input_size=self.eval_length, hidden_size=32)
-        # loaded = torch.load(f'auto_encoder_model/autoencoder_model_{num_nodes}_{density}.pt')
-        # if 'model_state_dict' in loaded.keys():
-        #     Autoencoder_model.load_state_dict(loaded['model_state_dict'])
-        # else: 
-        #     Autoencoder_model.load_state_dict(loaded)                     
+                print(f'Loaded data: {path_ind}')                         
             
         input_data = torch.tensor(np.load(path[-1])).float()
         self.observed_values = input_data
         B, K, L, dims = self.observed_values.shape
         self.observed_values = torch.reshape(self.observed_values, (B,K,-1))
-        # print(self.observed_values.shape)
-        # min_persample = torch.min(torch.min(self.observed_values, dim=1, keepdim=True)[0],dim=-1, keepdim=True)[0]
-        # max_persample = torch.max(torch.max(self.observed_values, dim=1, keepdim=True)[0],dim=-1, keepdim=True)[0]
-        # self.observed_values = torch.div(torch.sub(self.observed_values, min_persample),torch.sub(max_persample, min_persample))
 
         rand_for_mask = torch.rand_like(self.observed_values)
-        self.observed_masks = torch.ones_like(self.observed_values)
+        self.observed_masks = torch.ones_like(self.observed_values) # no missing data in training set.
         if gt_mr >= 0.1:
           for i in range(self.observed_values.shape[0]):
             mask_len = random.choice([i for i in range(2,5)])
@@ -70,7 +58,7 @@ class spr_Dataset(Dataset):
               self.observed_masks[i, :, bin:end[index]]=0
 
         if train == True:
-          self.gt_masks = self.observed_masks #np.ones_like(self.observed_values)
+          self.gt_masks = self.observed_masks 
         else:
           rand_for_mask = torch.rand(self.observed_masks.shape) * self.observed_masks
           for i in range(self.observed_masks.shape[0]):
@@ -101,7 +89,6 @@ class spr_Dataset(Dataset):
 
 def get_dataloader(train=True, val=False, seed=1, num_nodes=50, batch_size=16, test_mr=0.5, gt_mr=0.0, T=100, density=0.5, noise=False, amortized=False):
 
-    # only to obtain total length of dataset
     if train == True and val == False:
       dataset = spr_Dataset(train=True, val=False, seed=seed, num_nodes=num_nodes, test_mr=test_mr, gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
       loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)

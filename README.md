@@ -1,6 +1,6 @@
 # DiffRI: A Diffusion Model for Relational Inference
 
-This repository provides implementations of experiments in the paper for review.
+This repository provides partial implementations of experiments in the paper for review purpose.
 
 ## Setup
 ```
@@ -34,6 +34,7 @@ python exe_spr.py --seed 1 --num-node 5 --density 0.5 --T 49
 ```
 
 After training the model, you can test it with following codes.
+
 Kuramoto:
 ```
 python test_kura.py --seed 1 --num-node 5 --density 0.5 --T 100 --model-path <path>
@@ -43,4 +44,4 @@ Spring:
 python test_spring.py --seed 1 --num-node 5 --density 0.5 --T 49 --model-path <path>
 ```
 
-BTW, if you want to check inference results during running. You can uncomment codes in Line 228-230 in `diff_models.py`.
+BTW, you can uncomment codes in Line 228-230 in `diff_models.py` to check inference results in every iteration.

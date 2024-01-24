@@ -35,16 +35,17 @@ with open(path, "r") as f:
 config["model"]["is_unconditional"] = args.unconditional
 config["model"]["number_series"] = args.num_node
 config["model"]["time_steps"] = args.T
-if args.no_reg:
-    config["exp_set"]["no-reg"] = True
-else:
-    config["exp_set"]["no-reg"] = False
+
 # exp settings
 config["exp_set"] = {}
 config["exp_set"]["network_density"] = args.density
 config["exp_set"]["seed"] = args.seed
 config["exp_set"]["num_node"] = args.num_node
-
+if args.no_reg:
+    config["exp_set"]["no-reg"] = True
+else:
+    config["exp_set"]["no-reg"] = False
+    
 print(json.dumps(config, indent=4))
 
 current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

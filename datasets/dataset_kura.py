@@ -6,12 +6,11 @@ import numpy as np
 import random
 import torch
 from torch.utils.data import DataLoader, Dataset
-#from auto_encoder_model.ae_model import Autoencoder
 
 class kura_Dataset(Dataset):
     def __init__(self, num_nodes, eval_length=100, seed=0, train=True, val=False, test_mr=0.5, gt_mr=0.0, density=0.5, noise=False, amortized=False):
         self.eval_length = eval_length
-        np.random.seed(seed)  # seed for ground truth choice
+        np.random.seed(seed)  
         torch.manual_seed(seed)
         self.observed_values = []
         self.observed_masks = []
@@ -91,7 +90,6 @@ class kura_Dataset(Dataset):
 
 def get_dataloader(train=True, val=True, seed=1, num_nodes=50, batch_size=16, test_mr=0.5, gt_mr=0.5, T=100, density=0.5, noise=False, amortized=False):
 
-    # only to obtain total length of dataset
     if train == True and val == False:
       dataset = kura_Dataset(train=True, val=False, seed=seed, num_nodes=num_nodes, test_mr=test_mr, gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
       loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
