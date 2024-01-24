@@ -15,7 +15,7 @@ cd data;
 python kuramoto_gen.py --num-node 5 --density 0.5 --seed 1 --nsample 500
 ```
 
-For Spring dtastes, you can generate it with the following code.
+For Spring datasets, you can generate it with the following code.
 ```
 cd data;
 python spring_gen.py --num-node 5 --density 0.5 --seed 1 --nsample 500
