@@ -1,0 +1,28 @@
+
+#type: args
+
+train:
+  epochs: 2000
+  batch_size: 16
+  lr: 0.0005
+
+diffusion:
+  layers: 2
+  channels: 64
+  nheads: 4
+  diffusion_embedding_dim: 128
+  beta_start: 0.0001
+  beta_end: 0.5 
+  num_steps: 50 
+  schedule: "quad" 
+
+model:
+  is_unconditional: 0
+  timeemb: 128
+  featureemb: 16
+  target_strategy: "customed"
+  sampling: 'DDPM'
+  schedule: 'uniform' 
+  sample_step: 10
+  time_steps: 49
+  feature_layer: 'lstm'
