@@ -4,7 +4,8 @@ import torch.nn as nn
 from diff_models import diff_models
 import random
 
-
+# Partially based on https://github.com/ermongroup/CSDI
+#  (MIT license)
 class DiffRI_base(nn.Module):
     def __init__(self, target_dim, config, device, density):
         super().__init__()
@@ -249,11 +250,8 @@ class DiffRI_base(nn.Module):
 
         if self.target_strategy == "customed":
             cond_mask, target_mask, target_list = self.get_inter_mask(observed_mask)
-            # observed_data[(target_mask | cond_mask) == 0] = 0
-        elif self.target_strategy == "random":
-            cond_mask = self.get_randmask(observed_mask)
-            target_mask = None
-            target_list = None
+        else:
+            raise NotImplementedError("Masking stretegy not implemented")
         side_info = self.get_side_info(observed_tp, cond_mask)
         loss_func = self.calc_loss if is_train == 1 else self.calc_loss_valid
         return loss_func(observed_data, cond_mask, observed_mask, side_info, is_train, epoch_no=epoch_no, target_mask=target_mask, target_list=target_list)
@@ -275,7 +273,6 @@ class DiffRI_base(nn.Module):
             cond_mask[:, not_s_list] = observed_mask[:, not_s_list]
             target_mask = observed_mask - cond_mask
             target_mask[:, not_s_list, :] = 0
-            # print(target_mask[0,:,:30], cond_mask[0,:,:30])
             side_info = self.get_side_info(observed_tp, cond_mask) 
 
             B = cond_mask.shape[0]

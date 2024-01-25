@@ -168,7 +168,8 @@ class DiffusionStepEmbedding(nn.Module):
         table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)  # (T,dim*2)
         return table
 
-
+# Partially based on https://github.com/ermongroup/CSDI
+#  (MIT license)
 class diff_models(nn.Module):
     def __init__(self, config, inputdim=2):
         super().__init__()
