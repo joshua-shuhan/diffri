@@ -120,8 +120,7 @@ class edge_prediction_cnn(nn.Module):
         super().__init__()
         hidden = 64
         self.config = config
-        
-        self.factor = False
+
         if config['model']['is_unconditional'] == True:
             input_dim = 1
         else:
@@ -130,14 +129,7 @@ class edge_prediction_cnn(nn.Module):
         self.cnn = CNNBlock(input_dim, hidden, hidden, do_prob=0.0)
 
         self.mlp1 = MLPBlock(2 * hidden, hidden,hidden, do_prob=0.0)
-
-        self.edge_out_layer = MLPBlock(4,2,1,do_prob=0.0)
         self.output_projection =  nn.Linear(hidden,2)
-
-        if self.factor:
-            print("Using factor graph CNN encoder.")
-        else:
-            print("Using CNN encoder.")
 
         self.diffusion_embedding = DiffusionEmbedding(
             num_nodes=config['model']["number_series"],
