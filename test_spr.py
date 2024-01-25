@@ -57,17 +57,15 @@ else:
 
 store_result = evaluate(model, data_loader, nsample=args.eval_sample, scaler=1, num_node=args.num_node)
 
-conn_mat = np.load(f'data/spr_seed_{args.seed}_num_node_{args.num_node}_T_{args.T}_noise_False_density_{args.density}_amort_False_conn_test.npy')
-conn_mat = conn_mat[0]
-conn_mat = conn_mat != 0
-np.fill_diagonal(conn_mat, 0)
-print(conn_mat)
-# conn_mat = torch.flatten(conn_mat[~np.eye(conn_mat.shape[0],dtype=bool)])
+conn_mat_tot = np.load(f'data/spr_seed_{args.seed}_num_node_{args.num_node}_T_{args.T}_noise_False_density_{args.density}_amort_False_conn_test.npy')
 
 acc_list = np.zeros([store_result.shape[0]])
 for i in range(store_result.shape[0]):
     inferred_mat = store_result[i]
     inferred_mat = np.array(inferred_mat)
+    conn_mat = conn_mat_tot[i]
+    conn_mat = conn_mat != 0
+    np.fill_diagonal(conn_mat, 0)
     corr_w_conn = inferred_mat[conn_mat]
     corr_wo_conn = inferred_mat[~(conn_mat+(np.eye(args.num_node)==1))]
 

@@ -60,10 +60,6 @@ store_result = evaluate(model, data_loader, nsample=args.eval_sample, scaler=1, 
 
 conn_mat_tot = np.load(f'data/kura_seed_{args.seed}_num_node_{args.num_node}_T_{args.T}_noise_False_density_{args.density}_amort_False_conn_test.npy')
 
-#print(conn_mat)
-
-# distributions plots
-# show correlation value between pairs w/ ground truth connection and pairs w/o ground truth connection.
 acc_list = np.zeros([store_result.shape[0]])
 for i in range(store_result.shape[0]):
     inferred_mat = store_result[i]
