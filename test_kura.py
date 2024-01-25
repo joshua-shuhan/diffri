@@ -58,7 +58,7 @@ else:
 
 store_result = evaluate(model, data_loader, nsample=args.eval_sample, scaler=1, num_node=args.num_node)
 
-conn_mat_tot = np.load(f'data/kura_seed_{args.seed}_num_node_{args.num_node}_T_{args.T}_noise_{args.noise}_density_{args.density}_amort_{args.amortized}_conn_test.npy')
+conn_mat_tot = np.load(f'data/kura_seed_{args.seed}_num_node_{args.num_node}_T_{args.T}_noise_False_density_{args.density}_amort_False_conn_test.npy')
 
 #print(conn_mat)
 

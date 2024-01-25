@@ -42,7 +42,7 @@ class spr_Dataset(Dataset):
                 print(f'Loaded data: {path_ind}')                         
             
         input_data = torch.tensor(np.load(path[-1])).float()
-        self.observed_values = input_data
+        self.observed_values = input_data[3:4]
         B, K, L, dims = self.observed_values.shape
         self.observed_values = torch.reshape(self.observed_values, (B,K,-1))
 

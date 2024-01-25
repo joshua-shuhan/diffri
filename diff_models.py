@@ -225,8 +225,8 @@ class diff_models(nn.Module):
             edges_new[i] = torch.cat([edges[i, :target_list[i].long()],  torch.tensor([1]).to(edges.device), edges[i, target_list[i].long():]])
             edges_temp_new[i] = torch.cat([edges_temp[i, :target_list[i].long()], torch.tensor([1]).to(edges_temp.device), edges_temp[i, target_list[i].long():]])
 
-        # for i in range(B):
-        #     setting.record_mat[target_list[i].long()] += edges_temp_new[i]
+        for i in range(B):
+            setting.record_mat[target_list[i].long()] += edges_temp_new[i]
         # print(setting.record_mat[:10,:10])
 
         # time_reg = torch.tensor([torch.sum(torch.abs(self.latest_graph[target_list[i].long()].to(edges.device) - edges[i])) for i in range(B)])

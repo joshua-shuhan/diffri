@@ -264,7 +264,7 @@ def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldernam
                         refresh=True,
                     )
             
-                store_return[batch_no-1] = setting.final_mat
+                store_return[batch_no-1] = setting.record_mat
     return store_return
 
 
