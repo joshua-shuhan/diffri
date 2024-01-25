@@ -68,14 +68,14 @@ for i in range(store_result.shape[0]):
     conn_mat = conn_mat_tot[i]
     conn_mat = conn_mat != 0
     np.fill_diagonal(conn_mat, 0)
-    corr_w_conn = inferred_mat[conn_mat]
-    corr_wo_conn = inferred_mat[~(conn_mat+(np.eye(args.num_node) == 1))]
+    w_conn = inferred_mat[conn_mat]
+    wo_conn = inferred_mat[~(conn_mat+(np.eye(args.num_node) == 1))]
 
     np.fill_diagonal(inferred_mat, 0)
     threshold = np.sort(
         inferred_mat, axis=None)[-int(args.density * args.num_node * (args.num_node-1))]
-    acc = (((sum(corr_w_conn >= threshold) + sum(corr_wo_conn <
-           threshold)) / (len(corr_w_conn)+len(corr_wo_conn))))
+    acc = (((sum(w_conn >= threshold) + sum(wo_conn <
+           threshold)) / (len(w_conn)+len(wo_conn))))
     acc_list[i] = acc
 
 print(np.mean(acc_list), np.std(acc_list))
