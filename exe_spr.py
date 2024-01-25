@@ -15,11 +15,13 @@ parser.add_argument('--device', default='cuda:0')
 parser.add_argument("--eval-sample", type=int, default=5)
 parser.add_argument("--unconditional", action="store_true")
 parser.add_argument("--modelfolder", type=str, default="")
-parser.add_argument("--checkpoint-path", type=str, default="", help="model path")
+parser.add_argument("--checkpoint-path", type=str,
+                    default="", help="model path")
 parser.add_argument('--gt-mr', default=0.0, type=float)
 parser.add_argument('--test-mr', default=0.5, type=float)
 parser.add_argument("--seed", type=int, required=True)
-parser.add_argument("--T", type=int, required=True, help="raw input data length")
+parser.add_argument("--T", type=int, required=True,
+                    help="raw input data length")
 parser.add_argument("--density", type=float, required=True)
 parser.add_argument("--num-node", type=int, required=True)
 parser.add_argument("--no-reg", action="store_true")
@@ -58,7 +60,7 @@ with open(foldername + "config.json", "w") as f:
 train_loader = get_dataloader(
     seed=args.seed,
     batch_size=config["train"]["batch_size"],
-    num_nodes = args.num_node,
+    num_nodes=args.num_node,
     train=True,
     val=False,
     test_mr=args.test_mr,
@@ -69,7 +71,7 @@ train_loader = get_dataloader(
 val_loader = get_dataloader(
     seed=args.seed,
     batch_size=config["train"]["batch_size"],
-    num_nodes = args.num_node,
+    num_nodes=args.num_node,
     train=True,
     val=True,
     gt_mr=args.gt_mr,
@@ -77,7 +79,8 @@ val_loader = get_dataloader(
     T=args.T,
     density=args.density
 )
-model = DiffRI(config, args.device, target_dim=args.num_node, density=args.density).to(args.device)
+model = DiffRI(config, args.device, target_dim=args.num_node,
+               density=args.density).to(args.device)
 setting.init(args.num_node)
 
 
@@ -86,7 +89,8 @@ continue_train = False
 if args.checkpoint_path:
     continue_train = True
     checkpoint_path = './save/' + args.checkpoint_path
-    load_checkpoint_train(model, config=config['train'], train_loader=train_loader,checkpoint_path=checkpoint_path, valid_loader=val_loader)
+    load_checkpoint_train(model, config=config['train'], train_loader=train_loader,
+                          checkpoint_path=checkpoint_path, valid_loader=val_loader)
 
 if args.modelfolder == "" and continue_train == False:
     train(

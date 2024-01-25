@@ -3,8 +3,9 @@ import torch
 from torch.optim import Adam, SGD
 from tqdm import tqdm
 import pickle
-import setting 
+import setting
 import os
+
 
 class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
@@ -22,9 +23,10 @@ class EarlyStopper:
             if self.counter >= self.patience:
                 return True
         return False
-    
+
+
 def load_checkpoint_train(model, config, train_loader, checkpoint_path, valid_epoch_interval=25, valid_loader=None):
-    
+
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint["model_state_dict"])
     optimizer = Adam(model.parameters(), lr=config["lr"], weight_decay=1e-6)
@@ -35,7 +37,7 @@ def load_checkpoint_train(model, config, train_loader, checkpoint_path, valid_ep
     p1 = int(0.75 * config["epochs"])
     p2 = int(0.9 * config["epochs"])
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones= [p1, p2], gamma=0.1
+        optimizer, milestones=[p1, p2], gamma=0.1
     )
 
     lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
@@ -65,7 +67,7 @@ def load_checkpoint_train(model, config, train_loader, checkpoint_path, valid_ep
                     refresh=False,
                 )
             lr_scheduler.step()
-        if epoch_no % 50==0 and epoch_no > 0:
+        if epoch_no % 50 == 0 and epoch_no > 0:
             temp_path = f'{foldername}/{epoch_no}_model.pt'
             torch.save({
                 'epoch': epoch_no,
@@ -73,8 +75,8 @@ def load_checkpoint_train(model, config, train_loader, checkpoint_path, valid_ep
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
                 'lr_scheduler': lr_scheduler.state_dict(),
-                }, temp_path)
-            
+            }, temp_path)
+
         if valid_loader is not None and (epoch_no + 1) % valid_epoch_interval == 0:
             model.eval()
             avg_loss_valid = 0
@@ -98,10 +100,11 @@ def load_checkpoint_train(model, config, train_loader, checkpoint_path, valid_ep
                     "at",
                     epoch_no,
                 )
-            if earlystop.early_stop(avg_loss_valid):             
+            if earlystop.early_stop(avg_loss_valid):
                 break
 
     torch.save(model.state_dict(), output_path)
+
 
 def train(
     model,
@@ -119,7 +122,7 @@ def train(
     p2 = int(0.5 * config["epochs"])
     p3 = int(0.75 * config["epochs"])
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones= [p1, p2, p3], gamma=0.1
+        optimizer, milestones=[p1, p2, p3], gamma=0.1
     )
     earlystop = EarlyStopper(patience=5, min_delta=0)
     best_valid_loss = 1e10
@@ -142,7 +145,7 @@ def train(
                     refresh=False,
                 )
             lr_scheduler.step()
-        if epoch_no % 200==0:
+        if epoch_no % 200 == 0:
             temp_path = f'{foldername}/{epoch_no}_model.pt'
             torch.save({
                 'epoch': epoch_no,
@@ -150,7 +153,7 @@ def train(
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
                 'lr_scheduler': lr_scheduler.state_dict(),
-                }, temp_path)
+            }, temp_path)
         if valid_loader is not None and (epoch_no + 1) % valid_epoch_interval == 0:
             model.eval()
             avg_loss_valid = 0
@@ -174,7 +177,7 @@ def train(
                     "at",
                     epoch_no,
                 )
-            if earlystop.early_stop(avg_loss_valid):             
+            if earlystop.early_stop(avg_loss_valid):
                 break
 
     if foldername != "":
@@ -183,7 +186,8 @@ def train(
 
 def quantile_loss(target, forecast, q: float, eval_points) -> float:
     return 2 * torch.sum(
-        torch.abs((forecast - target) * eval_points * ((target <= forecast) * 1.0 - q))
+        torch.abs((forecast - target) * eval_points *
+                  ((target <= forecast) * 1.0 - q))
     )
 
 
@@ -201,14 +205,15 @@ def calc_quantile_CRPS(target, forecast, eval_points, mean_scaler, scaler):
     for i in range(len(quantiles)):
         q_pred = []
         for j in range(len(forecast)):
-            q_pred.append(torch.quantile(forecast[j : j + 1], quantiles[i], dim=1))
+            q_pred.append(torch.quantile(
+                forecast[j: j + 1], quantiles[i], dim=1))
         q_pred = torch.cat(q_pred, 0)
         q_loss = quantile_loss(target, q_pred, quantiles[i], eval_points)
         CRPS += q_loss / denom
     return CRPS.item() / len(quantiles)
 
 
-def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldername="",num_node=0):
+def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldername="", num_node=0):
 
     with torch.no_grad():
         model.eval()
@@ -223,20 +228,21 @@ def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldernam
         all_generated_samples = []
         num_node = num_node
         eval_list = np.arange(num_node)
-        store_return = torch.zeros([len(test_loader),num_node,num_node])
+        store_return = torch.zeros([len(test_loader), num_node, num_node])
         with tqdm(test_loader, mininterval=5.0, maxinterval=50.0) as it:
             # test_batch_list = [1,3,5,7,9,11]
             for batch_no, test_batch in enumerate(it, start=1):
                 B = test_batch['observed_data'].shape[0]
                 setting.init(num_node)
                 for i in eval_list:
-                    output = model.evaluate(test_batch, torch.tensor(i), nsample)
+                    output = model.evaluate(
+                        test_batch, torch.tensor(i), nsample)
                     samples, c_target, eval_points, observed_points, observed_time = output
                     samples = samples.permute(0, 1, 3, 2)  # (B,nsample,L,K)
                     c_target = c_target.permute(0, 2, 1)  # (B,L,K)
                     eval_points = eval_points.permute(0, 2, 1)
                     observed_points = observed_points.permute(0, 2, 1)
-                    
+
                     samples_median = samples.median(dim=1)
                     all_target.append(c_target)
                     all_evalpoint.append(eval_points)
@@ -248,7 +254,8 @@ def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldernam
                         ((samples_median.values - c_target) * eval_points) ** 2
                     ) * (scaler ** 2)
                     mae_current = (
-                        torch.abs((samples_median.values - c_target) * eval_points) 
+                        torch.abs((samples_median.values - c_target)
+                                  * eval_points)
                     ) * scaler
 
                     mse_total += mse_current.sum().item()
@@ -263,10 +270,9 @@ def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldernam
                         },
                         refresh=True,
                     )
-            
+
                 store_return[batch_no-1] = setting.record_mat
     return store_return
-
 
 
 def mask(num_nodes, B, target_list):
@@ -274,10 +280,8 @@ def mask(num_nodes, B, target_list):
     sender_mask = torch.zeros([B, num_nodes-1, num_nodes])
     receiver_mask = torch.zeros([B, num_nodes-1, num_nodes])
     for i in range(B):
-        target=target_list[i]
+        target = target_list[i]
         sender_list = [i for i in range(num_nodes) if i != target]
-        sender_mask[i,[i for i in range(num_nodes-1)], sender_list] = 1 
+        sender_mask[i, [i for i in range(num_nodes-1)], sender_list] = 1
     receiver_mask[[i for i in range(B)], :, target_list.long()] = 1
     return torch.FloatTensor(sender_mask), torch.FloatTensor(receiver_mask)
-
-   

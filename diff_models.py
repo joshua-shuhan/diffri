@@ -269,7 +269,7 @@ class ResidualBlock(nn.Module):
         if config['model']['feature_layer'] == 'lstm':
             self.feature_layer = torch.nn.LSTM(input_size=config['model']["number_series"], hidden_size=256,batch_first=True,num_layers=1,dropout=0.5,proj_size=1)
         elif config['model']['feature_layer'] == 'mlp':
-            self.feature_layer = MLPBlock(in_dims=config['model']["number_series"], hidden_dims=64 * config['model']["number_series"] // 5,out_dims=1, do_prob=0.5) # nn.ModuleList(MLPBlock(in_dims=config['model']["number_series"], hidden_dims=config['model']["number_series"] // 2, out_dims=1, do_prob=0.0) for i in range(config['model']["number_series"]))
+            self.feature_layer = MLPBlock(in_dims=config['model']["number_series"], hidden_dims=64 * config['model']["number_series"] // 5,out_dims=1, do_prob=0.5) 
         self.target_embedding = TargetEmbedding(
             num_nodes=config['model']["number_series"],
             embedding_dim=channels ,
