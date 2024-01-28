@@ -3,8 +3,13 @@
 This repository provides partial implementations of experiments in the paper for review purpose.
 
 ## Setup
+First, download necessary packages.
 ```
-pip install -r requirements.txt
+conda create --name diffri --file requirements.txt 
+```
+Then, activate the `diffri` environment.
+```
+conda activate diffri
 ```
 ## Running experiments
 We provides two datasets here.
