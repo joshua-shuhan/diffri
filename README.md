@@ -48,5 +48,6 @@ Spring:
 ```
 python test_spring.py --seed 1 --num-node 5 --density 0.5 --T 49 --model-path <path>
 ```
+After running, the terminal will display the mean and standard deviation of accuracy across test samples.
 
 BTW, you can uncomment codes in Line 231 in `diff_models.py` to check inference results in every iteration.

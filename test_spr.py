@@ -78,4 +78,4 @@ for i in range(store_result.shape[0]):
            threshold)) / (len(w_conn)+len(wo_conn))))
     acc_list[i] = acc
 
-print(np.mean(acc_list), np.std(acc_list))
+print(f'Mean (standard deviation) accuracy over corresponding test set: {np.mean(acc_list)} ({np.std(acc_list)})')
