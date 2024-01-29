@@ -109,37 +109,6 @@ def Conv1d_with_init(in_channels, out_channels, kernel_size):
     layer = nn.Conv1d(in_channels, out_channels, kernel_size)
     nn.init.kaiming_normal_(layer.weight)
     return layer
-
-
-class TargetEmbedding(nn.Module):
-    def __init__(self, num_nodes, embedding_dim=128, projection_dim=None):
-        super().__init__()
-        if projection_dim is None:
-            projection_dim = embedding_dim
-        self.register_buffer(
-            "embedding",
-            self._build_embedding(num_nodes, embedding_dim / 2),
-            persistent=False,
-        )
-        self.projection1 = nn.Linear(embedding_dim, projection_dim)
-        self.projection2 = nn.Linear(projection_dim, projection_dim)
-
-    def forward(self, target_nodes):
-        x = self.embedding[target_nodes]
-        x = self.projection1(x)
-        x = F.silu(x)
-        x = self.projection2(x)
-        x = F.silu(x)
-        return x
-
-    def _build_embedding(self, num_nodes, dim=64):
-        steps = torch.arange(num_nodes).unsqueeze(1)  # (K,1)
-        frequencies = 10.0 ** (torch.arange(dim) / (dim - 1) * 4.0).unsqueeze(0)  # (1,dim)
-        table = steps * frequencies  # (K,dim)
-        table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)  # (K,dim*2)
-        return table
-
-    
 class DiffusionStepEmbedding(nn.Module):
     def __init__(self, num_steps, embedding_dim=128, projection_dim=None):
         super().__init__()
@@ -270,10 +239,7 @@ class ResidualBlock(nn.Module):
             self.feature_layer = torch.nn.LSTM(input_size=config['model']["number_series"], hidden_size=256,batch_first=True,num_layers=1,dropout=0.5,proj_size=1)
         elif config['model']['feature_layer'] == 'mlp':
             self.feature_layer = MLPBlock(in_dims=config['model']["number_series"], hidden_dims=64 * config['model']["number_series"] // 5,out_dims=1, do_prob=0.5) 
-        self.target_embedding = TargetEmbedding(
-            num_nodes=config['model']["number_series"],
-            embedding_dim=channels ,
-        )
+ 
         self.init_weights()
         self.config = config
         upper_indices = np.triu_indices(config['model']['time_steps'], k = 1)
