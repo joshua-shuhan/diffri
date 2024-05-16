@@ -2,7 +2,7 @@
 #type: args
 
 train:
-  epochs: 2
+  epochs: 2000
   batch_size: 16 # increase batch size if run on scaled dataset
   lr: 0.0005
 

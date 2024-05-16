@@ -293,7 +293,7 @@ class DiffRI_base(nn.Module):
             observed_mask,
             observed_tp,
             _,
-            cut_length,
+            _,
         ) = self.process_data(batch)
         with torch.no_grad():
             # Here we evaulate model on imputing data.
