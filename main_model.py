@@ -19,6 +19,8 @@ class DiffRI_base(nn.Module):
         self.emb_feature_dim = config["model"]["featureemb"]
         self.is_unconditional = config["model"]["is_unconditional"]
         self.target_strategy = config["model"]["target_strategy"]
+        self.mode = config["model"]["mode"]
+
         self.density = density
         self.emb_total_dim = self.emb_time_dim + self.emb_feature_dim
         if self.is_unconditional == False:
@@ -59,29 +61,33 @@ class DiffRI_base(nn.Module):
         pe[:, :, 1::2] = torch.cos(position * div_term)
         return pe
 
-    def get_inter_mask(self, observed_mask, init_step=5):
+
+    def get_inter_mask(self, observed_mask, init_step=5, mode="imputation"):
         B, K, L = observed_mask.shape
-        cond_mask = torch.zeros_like(observed_mask)
-        target_mask = torch.zeros_like(observed_mask)
-        rand_for_mask = torch.rand_like(observed_mask) * observed_mask
+
+        cond_mask = torch.ones((B, K, L)).to(self.device)* observed_mask
+        target_mask = torch.zeros((B, K, L)).to(self.device)
+        # uncomment to test missing data
+        rand_for_mask = torch.rand((B, K, L)).to(self.device) * observed_mask
         target_list = torch.zeros(B)
         for i in range(B):
-            target_k = random.sample(range(K), 1)
-            target_list[i] = target_k[0]
-            for j in range(K):
-                if j == target_k[0]:
-                    sample_ratio = 0.5
-                else:
-                    sample_ratio = 0
-                num_observed = sum(observed_mask[i, j, :])
-                num_masked = (num_observed * sample_ratio).round()
-                rand_for_mask[i, j, :][rand_for_mask[i, j].topk(
-                    int(num_masked)).indices] = -1
-                cond_mask[i, j, :][rand_for_mask[i, j] > 0] = 1
+            target = random.sample(range(K), 1)
+            # print(masked_k)
+            target_list[i] = target[0]
 
-            target_mask[i, target_k[0],
-                        :][rand_for_mask[i, target_k[0], :] == -1] = 1
-        return cond_mask == 1, target_mask == 1, target_list
+            sample_ratio = 0.5 
+            num_observed = sum(observed_mask[i,target[0],:])
+            num_masked = (num_observed * sample_ratio).round()
+            rand_for_mask[i,target[0],:][rand_for_mask[i,target[0]].topk(int(num_masked)).indices] = -1
+            
+            #cond_mask[i, :, int(cond_mask.shape[2] // 2):] = 0 # target[0]
+            #target_mask[i,target[0],int(cond_mask.shape[2] // 2):] = 1
+            #target_mask[i,target[0],int(cond_mask.shape[2] // 2):] *= observed_mask[i,target[0],int(cond_mask.shape[2] // 2):]
+            if mode == "imputation":
+                cond_mask[i,target[0],:][rand_for_mask[i,target[0]] <= 0] = 0
+                target_mask[i,target[0],:][rand_for_mask[i,target[0],:]==-1] = 1
+        return cond_mask==1, target_mask==1, target_list
+
 
     def get_side_info(self, observed_tp, cond_mask):
         B, K, L = cond_mask.shape
@@ -266,16 +272,17 @@ class DiffRI_base(nn.Module):
             observed_data,
             observed_mask,
             observed_tp,
-            gt_mask,
-            for_pattern_mask,
             _,
+            _
         ) = self.process_data(batch)
 
         if self.target_strategy == "customed":
-            cond_mask, target_mask, target_list = self.get_inter_mask(
-                observed_mask)
-        else:
-            raise NotImplementedError("Masking stretegy not implemented")
+            cond_mask, target_mask, target_list = self.get_inter_mask(observed_mask)
+            # observed_data[(target_mask | cond_mask) == 0] = 0
+        elif self.target_strategy == "random":
+            cond_mask = self.get_randmask(observed_mask)
+            target_mask = None
+            target_list = None
         side_info = self.get_side_info(observed_tp, cond_mask)
         loss_func = self.calc_loss if is_train == 1 else self.calc_loss_valid
         return loss_func(observed_data, cond_mask, observed_mask, side_info, is_train, epoch_no=epoch_no, target_mask=target_mask, target_list=target_list)
@@ -285,46 +292,44 @@ class DiffRI_base(nn.Module):
             observed_data,
             observed_mask,
             observed_tp,
-            gt_mask,
             _,
             cut_length,
         ) = self.process_data(batch)
         with torch.no_grad():
-            not_s_list = [i for i in range(
-                observed_data.shape[1]) if i not in s_list]
-            gt_mask[:, not_s_list, :] = 1
-            gt_mask *= observed_mask
-            cond_mask = gt_mask
-            cond_mask[:, not_s_list] = observed_mask[:, not_s_list]
+            # Here we evaulate model on imputing data.
+            B, K, L = observed_mask.shape
+            rand_for_mask = torch.rand((B, K, L)).to(self.device) * observed_mask
+            cond_mask = observed_mask.clone()
+            observed_data = observed_data * observed_mask
+            for i in range(B):
+                sample_ratio = 0.5 
+                num_observed = sum(observed_mask[i,s_list.item(),:])
+                num_masked = (num_observed * sample_ratio).round()
+                rand_for_mask[i,s_list.item(),:][rand_for_mask[i,s_list.item()].topk(int(num_masked)).indices] = -1
+                cond_mask[i,s_list.item(),:][rand_for_mask[i,s_list.item()] <= 0] = 0
             target_mask = observed_mask - cond_mask
-            target_mask[:, not_s_list, :] = 0
-            side_info = self.get_side_info(observed_tp, cond_mask)
+            side_info = self.get_side_info(observed_tp, cond_mask) 
 
-            B = cond_mask.shape[0]
             target_list = torch.ones(B) * s_list.item()
-            samples = self.impute(observed_data, cond_mask=cond_mask, target_mask=target_mask,
-                                  side_info=side_info, n_samples=n_samples, target_list=target_list)
-
+            samples = self.impute(observed_data, cond_mask=cond_mask, target_mask=target_mask, side_info=side_info, n_samples=n_samples, target_list=target_list)
+         
         return samples, observed_data, target_mask, observed_mask, observed_tp
 
-
+ 
 class DiffRI(DiffRI_base):
     def __init__(self, config, device, target_dim=10, density=0.5):
         super().__init__(target_dim=target_dim, config=config, device=device, density=density)
-
     def process_data(self, batch):
         observed_data = batch["observed_data"].to(self.device).float().clone()
         observed_mask = batch["observed_mask"].to(self.device).float().clone()
         observed_tp = batch["timepoints"].to(self.device).float().clone()
-        gt_mask = batch["gt_mask"].to(self.device).float().clone()
         cut_length = torch.zeros(len(observed_data)).long().to(self.device)
         for_pattern_mask = observed_mask
-
+        
         return (
-            observed_data,
-            observed_mask,
-            observed_tp,
-            gt_mask,
-            for_pattern_mask,
-            cut_length,
-        )
+        observed_data,
+        observed_mask,
+        observed_tp,
+        for_pattern_mask,
+        cut_length,
+        )       
