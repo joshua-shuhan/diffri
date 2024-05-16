@@ -2,7 +2,7 @@
 #type: args
 
 train:
-  epochs: 2000
+  epochs: 2
   batch_size: 16 # increase batch size if run on scaled dataset
   lr: 0.0005
 
@@ -26,3 +26,4 @@ model:
   sample_step: 10
   time_steps: 49
   feature_layer: 'lstm'
+  mode: 'imputation'

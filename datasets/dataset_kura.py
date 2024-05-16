@@ -44,47 +44,30 @@ class kura_Dataset(Dataset):
 
         input_data = torch.tensor(np.load(path[-1])).float()
         self.observed_values = input_data
-
-        # self.observed_values = (self.observed_values - torch.min(self.observed_values, dim=2, keepdim=True)[0]) / (self.observed_values.max(dim=2, keepdim=True)[0]  - self.observed_values.min(dim=2, keepdim=True)[0] )
-        # print(self.observed_values[0,0])
         rand_for_mask = torch.rand_like(self.observed_values)
-        self.observed_masks = torch.ones_like(self.observed_values)
-        if gt_mr >= 0.1:
-            for i in range(self.observed_values.shape[0]):
-                mask_len = random.choice([i for i in range(2, 5)])
-                mask_period = int(
-                    self.observed_values.shape[2] * gt_mr / mask_len)
-                start = [i for i in range(
-                    0, self.observed_values.shape[2]-1, int(self.observed_values.shape[2]/mask_period))][:-1]
-                end = [i+mask_len for i in start]
-                for index, bin in enumerate(start):
-                    self.observed_masks[i, :, bin:end[index]] = 0
+        
+        # Randomly mask some values. The model never see masked parts.
+        # mimic missing values in real-world data. Only observed values (where observed_masks=1) are used for training.
+        self.observed_masks = torch.ones_like(self.observed_values)        
+        if gt_mr != 0:
+          for i in range(self.observed_values.shape[0]):
+            for j in range(self.observed_masks.shape[1]):
+              sample_ratio = gt_mr  # missing ratio
+              num_observed = sum(self.observed_masks[i,j,:])
+              num_masked = (num_observed * sample_ratio).round()
+              rand_for_mask[i,j,:][rand_for_mask[i,j].topk(int(num_masked)).indices] = -1
+        self.observed_masks = (rand_for_mask > 0).reshape(self.observed_masks.shape).float()
+        # use following code if you are training the model with truly existing missing values
+        # self.observed_masks = ~np.isnan(observed_values)
 
-        if train == True:
-            # np.ones_like(self.observed_values)
-            self.gt_masks = self.observed_masks
-        else:
-            rand_for_mask = torch.rand(
-                self.observed_masks.shape) * self.observed_masks
-            for i in range(self.observed_masks.shape[0]):
-                for j in range(self.observed_masks.shape[1]):
-                    sample_ratio = test_mr  # missing ratio
-                    num_observed = sum(self.observed_masks[i, j, :])
-                    num_masked = (num_observed * sample_ratio).round()
-                    rand_for_mask[i, j, :][rand_for_mask[i, j].topk(
-                        int(num_masked)).indices] = -1
-            cond_mask = (rand_for_mask > 0).reshape(
-                self.observed_masks.shape).float()
-            self.gt_masks = cond_mask
         self.target = np.load(path[0])
         self.use_index_list = np.arange(self.observed_values.shape[0])
-
+        
     def __getitem__(self, org_index):
         index = self.use_index_list[org_index]
         s = {
             "observed_data": self.observed_values[index],
             "observed_mask": self.observed_masks[index],
-            "gt_mask": self.gt_masks[index],
             "timepoints": np.arange(self.eval_length),
             "targets": self.target
         }
@@ -96,17 +79,15 @@ class kura_Dataset(Dataset):
 
 def get_dataloader(train=True, val=True, seed=1, num_nodes=50, batch_size=16, test_mr=0.5, gt_mr=0.5, T=100, density=0.5, noise=False, amortized=False):
 
+    # only to obtain total length of dataset
     if train == True and val == False:
-        dataset = kura_Dataset(train=True, val=False, seed=seed, num_nodes=num_nodes, test_mr=test_mr,
-                               gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
+      dataset = kura_Dataset(train=True, val=False, seed=seed, num_nodes=num_nodes, test_mr=test_mr, gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
+      loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
     elif train == True and val == True:
-        dataset = kura_Dataset(train=True, val=True, seed=seed, num_nodes=num_nodes, test_mr=test_mr,
-                               gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
+      dataset = kura_Dataset(train=True, val=True, seed=seed, num_nodes=num_nodes, test_mr=test_mr, gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
+      loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
     elif train == False:
-        dataset = kura_Dataset(train=False, seed=seed, num_nodes=num_nodes, test_mr=test_mr,
-                               gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
-
+      dataset = kura_Dataset(train=False, seed=seed, num_nodes=num_nodes, test_mr=test_mr, gt_mr=gt_mr, eval_length=T, density=density, noise=noise, amortized=amortized)
+      loader = DataLoader(dataset, batch_size=batch_size, shuffle=1)
+    
     return loader

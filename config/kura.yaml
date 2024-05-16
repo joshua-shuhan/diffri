@@ -26,3 +26,4 @@ model:
   sample_step: 10
   time_steps: 100
   feature_layer: 'lstm'
+  mode: "imputation"
