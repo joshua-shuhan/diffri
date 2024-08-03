@@ -170,11 +170,13 @@ class edge_prediction_cnn(nn.Module):
         input = input.reshape(input.shape[0] * input.shape[1], input.shape[2], input.shape[3])
         input = self.cnn(input)
         input = input.reshape(B, K, -1)
+        # Create node embedding and add to input
         node_emb = self.diffusion_embedding([int(i) for i in range(K)])
         node_emb = node_emb[None, :, :]
         node_emb = torch.repeat_interleave(node_emb, B, dim=0)  
         input = input + node_emb
         
+        # Create masks for obtaining edges representations
         send_mask, rec_mask = mask(K, B, target_list)
         edges = self.node2edge_temporal(input, rec_mask, send_mask)
         
