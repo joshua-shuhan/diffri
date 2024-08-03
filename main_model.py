@@ -7,7 +7,6 @@ import random
 # Partially based on https://github.com/ermongroup/CSDI
 #  (MIT license)
 
-
 class DiffRI_base(nn.Module):
     def __init__(self, target_dim, config, device, density):
         super().__init__()
@@ -62,7 +61,7 @@ class DiffRI_base(nn.Module):
         return pe
 
 
-    def get_inter_mask(self, observed_mask, init_step=5, mode="imputation"):
+    def get_inter_mask(self, observed_mask, mode="imputation"):
         B, K, L = observed_mask.shape
 
         cond_mask = torch.ones((B, K, L)).to(self.device)* observed_mask
@@ -80,14 +79,13 @@ class DiffRI_base(nn.Module):
             num_masked = (num_observed * sample_ratio).round()
             rand_for_mask[i,target[0],:][rand_for_mask[i,target[0]].topk(int(num_masked)).indices] = -1
             
-            #cond_mask[i, :, int(cond_mask.shape[2] // 2):] = 0 # target[0]
-            #target_mask[i,target[0],int(cond_mask.shape[2] // 2):] = 1
-            #target_mask[i,target[0],int(cond_mask.shape[2] // 2):] *= observed_mask[i,target[0],int(cond_mask.shape[2] // 2):]
             if mode == "imputation":
                 cond_mask[i,target[0],:][rand_for_mask[i,target[0]] <= 0] = 0
                 target_mask[i,target[0],:][rand_for_mask[i,target[0],:]==-1] = 1
-        return cond_mask==1, target_mask==1, target_list
+            else:
+                raise NotImplementedError("Design your own way to train the model (e.g., train through prediction)")
 
+        return cond_mask==1, target_mask==1, target_list
 
     def get_side_info(self, observed_tp, cond_mask):
         B, K, L = cond_mask.shape
@@ -141,6 +139,7 @@ class DiffRI_base(nn.Module):
         l1_loss = torch.sum(l1_loss) / torch.numel(l1_loss)
 
         if self.config["exp_set"]["no-reg"]:
+            # No regularization term in training
             loss = (residual ** 2).sum() / (num_eval if num_eval > 0 else 1)
         else:
             loss = (residual ** 2).sum() / (num_eval if num_eval >
@@ -154,6 +153,7 @@ class DiffRI_base(nn.Module):
         a = (1 - beta).cumprod(dim=0).index_select(0, t + 1).view(-1, 1, 1, 1)
         return a
 
+    # From https://github.com/ermongroup/ddim
     def generalized_steps(self, x, cond_mask, target_mask, side_info, seq, b, **kwargs):
         with torch.no_grad():
             n = x.size(0)
@@ -277,7 +277,7 @@ class DiffRI_base(nn.Module):
         ) = self.process_data(batch)
 
         if self.target_strategy == "customed":
-            cond_mask, target_mask, target_list = self.get_inter_mask(observed_mask)
+            cond_mask, target_mask, target_list = self.get_inter_mask(observed_mask, mode="imputation")
             # observed_data[(target_mask | cond_mask) == 0] = 0
         elif self.target_strategy == "random":
             cond_mask = self.get_randmask(observed_mask)
@@ -301,6 +301,7 @@ class DiffRI_base(nn.Module):
             rand_for_mask = torch.rand((B, K, L)).to(self.device) * observed_mask
             cond_mask = observed_mask.clone()
             observed_data = observed_data * observed_mask
+            # When evaluate the model, set 50% of the observed data to be conditional, remains to be target
             for i in range(B):
                 sample_ratio = 0.5 
                 num_observed = sum(observed_mask[i,s_list.item(),:])
