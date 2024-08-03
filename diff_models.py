@@ -25,10 +25,6 @@ class MLPBlock(nn.Module):
         out = self.layer2(out)
         out = self.gate(out)
         return out
-    
-def reparametrization(z_mean, z_log_var):
-    epsilon = np.random.normal(loc=1, scale=0.5) #torch.randn(z_mean.shape[0], z_mean.shape[1])
-    return z_mean + z_log_var * epsilon
 
 def get_torch_trans(heads=8, layers=1, channels=64):
     encoder_layer = nn.TransformerEncoderLayer(
@@ -197,13 +193,6 @@ class diff_models(nn.Module):
 
         for i in range(B):
             setting.record_mat[target_list[i].long()] += edges_temp_new[i]
-        # print(setting.record_mat[:10,:10])
-
-        # time_reg = torch.tensor([torch.sum(torch.abs(self.latest_graph[target_list[i].long()].to(edges.device) - edges[i])) for i in range(B)])
-        # time_reg = torch.mean(time_reg)
-
-        # for i in range(B):
-        #     self.latest_graph[target_list[i].long()] = edges[i] 
 
         x = x.reshape(B, inputdim, K * L)
         x = self.input_projection(x)
@@ -223,7 +212,7 @@ class diff_models(nn.Module):
         x = F.relu(x)
         x = self.output_projection2(x)  # (B,1,K*L)
         x = x.reshape(B, 1, L)
-        return x, reg_loss #, time_reg
+        return x, reg_loss 
 
 class ResidualBlock(nn.Module):
     def __init__(self, side_dim, channels, diffusion_embedding_dim, nheads, config):
@@ -245,6 +234,7 @@ class ResidualBlock(nn.Module):
         upper_indices = np.triu_indices(config['model']['time_steps'], k = 1)
         self.causal_mask = torch.zeros((config['model']['time_steps'], config['model']['time_steps']))
         self.causal_mask[upper_indices] = -float('inf')
+        # Check attention mask
         # print(self.causal_mask)
 
         self.pre_feature_layer = get_torch_trans(heads=nheads, layers=1, channels=channels)
@@ -294,13 +284,13 @@ class ResidualBlock(nn.Module):
         l1_temp = l1.unsqueeze(1)
         l2_temp = l1.unsqueeze(0)
         window_size = 20
+        # Filter for moving average operation
         filter = (torch.abs(l1_temp - l2_temp) <= window_size) 
-        # upper_indices = np.triu_indices(L, k = 0)
-        # filter[upper_indices] = 0
         filter = filter / ( 2 * window_size + 1)
         y_blur = torch.einsum('ts,bctk->bcsk', filter.to(y.device), y)
         y_masked = y_blur + self_edges_aug * (y - y_blur)
-        #y_masked = self_edges_aug * y
+        # Instead of moving average, use 0/1 mask
+        # y_masked = self_edges_aug * y
 
         if self.config['model']['feature_layer'] == 'lstm':
             y_masked = torch.reshape(y_masked, (B*channel, L, K))
