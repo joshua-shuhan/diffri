@@ -12,16 +12,15 @@ from utils import train, load_checkpoint_train
 parser = argparse.ArgumentParser(description="DiffRI")
 parser.add_argument("--config", type=str, default="spr.yaml")
 parser.add_argument('--device', default='cuda:0')
-parser.add_argument("--eval-sample", type=int, default=5, help="Number of generated samples in evaluation")
 parser.add_argument("--unconditional", action="store_true")
 parser.add_argument("--checkpoint-path", type=str,
-                    default="", help="Give model path for continue training")
-parser.add_argument('--gt-mr', default=0.0, type=float, help="The ratio of unobserved data.")
+                    default="", help="give model path for continue training")
+parser.add_argument('--gt-mr', default=0.0, type=float, help="the ratio of unobserved data.")
 parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--T", type=int, required=True,
                     help="raw input data length")
-parser.add_argument("--density", type=float, required=True, help="Retrive datasets with corresponding network density. Also used for the optional regularized term")
-parser.add_argument("--num-node", type=int, required=True, help="Number of nodes in the network")
+parser.add_argument("--density", type=float, required=True, help="retrive datasets with corresponding network density. Also used for the optional regularized term")
+parser.add_argument("--num-node", type=int, required=True, help="number of nodes in the network")
 parser.add_argument("--no-reg", action="store_true", help="whether to use regularized term")
 
 
