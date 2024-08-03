@@ -12,19 +12,17 @@ from utils import train, load_checkpoint_train
 parser = argparse.ArgumentParser(description="DiffRI")
 parser.add_argument("--config", type=str, default="spr.yaml")
 parser.add_argument('--device', default='cuda:0')
-parser.add_argument("--eval-sample", type=int, default=5)
+parser.add_argument("--eval-sample", type=int, default=5, help="Number of generated samples in evaluation")
 parser.add_argument("--unconditional", action="store_true")
-parser.add_argument("--modelfolder", type=str, default="")
 parser.add_argument("--checkpoint-path", type=str,
-                    default="", help="model path")
-parser.add_argument('--gt-mr', default=0.0, type=float)
-parser.add_argument('--test-mr', default=0.5, type=float)
+                    default="", help="Give model path for continue training")
+parser.add_argument('--gt-mr', default=0.0, type=float, help="The ratio of unobserved data.")
 parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--T", type=int, required=True,
                     help="raw input data length")
-parser.add_argument("--density", type=float, required=True)
-parser.add_argument("--num-node", type=int, required=True)
-parser.add_argument("--no-reg", action="store_true")
+parser.add_argument("--density", type=float, required=True, help="Retrive datasets with corresponding network density. Also used for the optional regularized term")
+parser.add_argument("--num-node", type=int, required=True, help="Number of nodes in the network")
+parser.add_argument("--no-reg", action="store_true", help="whether to use regularized term")
 
 
 args = parser.parse_args()
@@ -63,7 +61,6 @@ train_loader = get_dataloader(
     num_nodes=args.num_node,
     train=True,
     val=False,
-    test_mr=args.test_mr,
     T=args.T,
     density=args.density
 )
@@ -75,7 +72,6 @@ val_loader = get_dataloader(
     train=True,
     val=True,
     gt_mr=args.gt_mr,
-    test_mr=args.test_mr,
     T=args.T,
     density=args.density
 )
@@ -92,7 +88,8 @@ if args.checkpoint_path:
     load_checkpoint_train(model, config=config['train'], train_loader=train_loader,
                           checkpoint_path=checkpoint_path, valid_loader=val_loader)
 
-if args.modelfolder == "" and continue_train == False:
+# Start brand new training
+if continue_train == False:
     train(
         model,
         config["train"],
