@@ -7,14 +7,14 @@ import numpy as np
 from main_model import DiffRI
 from datasets.dataset_spr import get_dataloader
 from utils import evaluate
+from sklearn.metrics import roc_auc_score
 
 
 parser = argparse.ArgumentParser(description="DiffRI")
 parser.add_argument("--config", type=str, default="spr.yaml")
 parser.add_argument('--device', default='cuda:0', help='Device for Attack')
-parser.add_argument("--eval-sample", type=int, default=5)
+parser.add_argument("--eval-sample", type=int, default=1, help="Number of generated samples in evaluation")
 parser.add_argument("--model-path", type=str, required=True)
-parser.add_argument('--test-mr', default=0.5, type=float)
 parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--T", type=int, required=True)
 parser.add_argument("--density", type=float, required=True)
@@ -42,7 +42,6 @@ data_loader = get_dataloader(
     batch_size=1,
     num_nodes=args.num_node,
     train=False,
-    test_mr=args.test_mr,
     T=args.T,
     density=args.density,
 )
@@ -65,11 +64,11 @@ acc_list = np.zeros([store_result.shape[0]])
 for i in range(store_result.shape[0]):
     inferred_mat = store_result[i]
     inferred_mat = np.array(inferred_mat)
-    conn_mat = conn_mat_tot[i]
-    conn_mat = conn_mat != 0
-    np.fill_diagonal(conn_mat, 0)
-    w_conn = inferred_mat[conn_mat]
-    wo_conn = inferred_mat[~(conn_mat+(np.eye(args.num_node) == 1))]
+    conn_mat_i = conn_mat_tot[i]
+    conn_mat_i = conn_mat_i != 0
+    np.fill_diagonal(conn_mat_i, 0)
+    w_conn = inferred_mat[conn_mat_i]
+    wo_conn = inferred_mat[~(conn_mat_i+(np.eye(args.num_node) == 1))]
 
     np.fill_diagonal(inferred_mat, 0)
     threshold = np.sort(
@@ -78,4 +77,19 @@ for i in range(store_result.shape[0]):
            threshold)) / (len(w_conn)+len(wo_conn))))
     acc_list[i] = acc
 
-print(f'Mean (standard deviation) accuracy over corresponding test set: {np.mean(acc_list)} ({np.std(acc_list)})')
+
+auroc_list = np.zeros([store_result.shape[0]])
+for i in range(store_result.shape[0]):
+    conn_mat_i = conn_mat_tot[i]
+    conn_mat_i = conn_mat_i != 0
+    np.fill_diagonal(conn_mat_i, 0)
+    conn_mat_i = conn_mat_i[~np.eye(conn_mat_i.shape[0],dtype=bool)].reshape(-1)
+    inferred_mat = store_result[i]
+    inferred_mat = np.array(inferred_mat)
+    # inferred_mat = torch.flatten(inferred_mat[~np.eye(inferred_mat.shape[0],dtype=bool)])
+    # print(inferred_mat)
+    inferred_mat = inferred_mat[~np.eye(inferred_mat.shape[0],dtype=bool)].reshape(-1)
+
+    auroc_list[i] = roc_auc_score(conn_mat_i,inferred_mat)
+
+print(f'Mean (standard deviation) accuracy over corresponding test set: {np.mean(acc_list)} ({np.std(acc_list)}). AUROC: {np.mean(auroc_list)} ({np.std(auroc_list)})')
