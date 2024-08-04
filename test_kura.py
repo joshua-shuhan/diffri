@@ -13,7 +13,7 @@ from sklearn.metrics import roc_auc_score
 parser = argparse.ArgumentParser(description="DiffRI")
 parser.add_argument("--config", type=str, default="kura.yaml")
 parser.add_argument('--device', default='cuda:0', help='Device for Attack')
-parser.add_argument("--eval-sample", type=int, default=1, help="Number of generated samples in evaluation")
+parser.add_argument("--eval-sample", type=int, default=5, help="Number of generated samples in evaluation")
 parser.add_argument("--unconditional", action="store_true")
 parser.add_argument("--model-path", type=str, required=True)
 parser.add_argument('--gt-mr', default=0.0, type=float)
