@@ -20,6 +20,7 @@ print(args)
 
 np.random.seed(args.seed)
 
+# Adapt from https://github.com/ethanfetaya/NRI/blob/master/data/synthetic_sim.py
 
 class SpringSim(object):
     def __init__(self, n_balls=5, box_size=5., loc_std=.5, vel_norm=.5,
