@@ -50,3 +50,13 @@ python test_spring.py --seed 1 --num-node 5 --density 0.5 --T 49 --model-path <p
 ```
 After running, the terminal will display the mean and standard deviation of accuracy across test samples.
 
+## Citation
+```
+@article{zheng2024diffusion,
+  title={Diffusion model for relational inference},
+  author={Zheng, Shuhan and Li, Ziqiang and Fujiwara, Kantaro and Tanaka, Gouhei},
+  journal={arXiv preprint arXiv:2401.16755},
+  year={2024}
+}
+```
+
