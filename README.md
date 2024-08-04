@@ -1,6 +1,7 @@
 # DiffRI: Diffusion Model for Relational Inference
 <img src="/assets/demo.gif" width="700" height="320">
-This is the official implementation of DiffRI.
+This is the official implementation of DiffRI. [Paper](https://arxiv.org/abs/2401.16755)
+
 
 ## Setup
 First, download necessary packages.
