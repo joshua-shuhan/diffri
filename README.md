@@ -1,6 +1,6 @@
 # DiffRI: A Diffusion Model for Relational Inference
 
-This repository provides partial implementations of experiments in the paper for review purpose.
+This is the official implementation of DiffRI.
 
 ## Setup
 First, download necessary packages.
